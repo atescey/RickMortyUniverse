@@ -1,66 +1,46 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { RootTabParamList } from '../types';
 import { CharacterListScreen } from '../screens/CharacterListScreen';
 import { LocationsScreen } from '../screens/LocationsScreen';
 import { EpisodesScreen } from '../screens/EpisodesScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { colors } from '../theme/colors';
+import type { TabParamList } from '../types';
 
-const Tab = createBottomTabNavigator<RootTabParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
 
-export const TabNavigator: React.FC = () => {
+export const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.tabBarBorder,
+          backgroundColor: colors.surfaceContainerLowest,
+          borderTopColor: colors.cardBorder,
+          borderTopWidth: 1,
           height: 60,
           paddingBottom: 8,
           paddingTop: 6,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'help';
-
-          if (route.name === 'Characters') {
-            iconName = focused ? 'people' : 'people-outline';
-          } else if (route.name === 'Locations') {
-            iconName = focused ? 'planet' : 'planet-outline';
-          } else if (route.name === 'Episodes') {
-            iconName = focused ? 'tv' : 'tv-outline';
-          } else if (route.name === 'Favorites') {
-            iconName = focused ? 'heart' : 'heart-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
+        tabBarLabelStyle: { fontFamily: 'JetBrainsMono_500Medium', fontSize: 10 },
+        tabBarIcon: ({ color, size }) => {
+          const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+            Characters: 'people',
+            Locations: 'planet',
+            Episodes: 'film',
+            Favorites: 'star',
+          };
+          return <Ionicons name={icons[route.name]} size={size} color={color} />;
         },
       })}
     >
-      <Tab.Screen
-        name="Characters"
-        component={CharacterListScreen}
-        options={{ tabBarLabel: 'Characters' }}
-      />
-      <Tab.Screen
-        name="Locations"
-        component={LocationsScreen}
-        options={{ tabBarLabel: 'Locations' }}
-      />
-      <Tab.Screen
-        name="Episodes"
-        component={EpisodesScreen}
-        options={{ tabBarLabel: 'Episodes' }}
-      />
-      <Tab.Screen
-        name="Favorites"
-        component={FavoritesScreen}
-        options={{ tabBarLabel: 'Favorites' }}
-      />
+      <Tab.Screen name="Characters" component={CharacterListScreen} options={{ title: 'Karakterler' }} />
+      <Tab.Screen name="Locations" component={LocationsScreen} options={{ title: 'Lokasyon' }} />
+      <Tab.Screen name="Episodes" component={EpisodesScreen} options={{ title: 'Bölümler' }} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Favoriler' }} />
     </Tab.Navigator>
   );
 };

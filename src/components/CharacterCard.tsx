@@ -1,57 +1,38 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { Character } from '../types';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
-import { Badge } from './Badge';
-import { useFavorites } from '../context/FavoritesContext';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors, spacing, borderRadius } from '../theme/colors';
+import { textStyles } from '../theme/textStyles';
+import type { Character } from '../types';
 
-interface CharacterCardProps {
+interface Props {
   character: Character;
   onPress: () => void;
 }
 
-export const CharacterCard: React.FC<CharacterCardProps> = ({ character, onPress }) => {
-  const { isFavorite, toggleFavorite } = useFavorites();
-  const favorited = isFavorite(character.id);
+const statusMeta = (status: string) => {
+  if (status === 'Alive') return { label: 'HAYATTA', color: colors.statusAlive };
+  if (status === 'Dead') return { label: 'ÖLÜ', color: colors.statusDead };
+  return { label: 'BİLİNMİYOR', color: colors.statusUnknown };
+};
+
+export const CharacterCard: React.FC<Props> = ({ character, onPress }) => {
+  const status = statusMeta(character.status);
 
   return (
-    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={onPress}>
-      <Image source={{ uri: character.image }} style={styles.image} />
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
-            {character.name}
-          </Text>
-          <TouchableOpacity
-            onPress={() => toggleFavorite(character)}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={styles.favoriteButton}
-          >
-            <Ionicons
-              name={favorited ? 'heart' : 'heart-outline'}
-              size={22}
-              color={favorited ? colors.favorite : colors.textMuted}
-            />
-          </TouchableOpacity>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+      <View style={styles.imageWrapper}>
+        <Image source={{ uri: character.image }} style={styles.image} />
+        <View style={styles.statusBadge}>
+          <View style={[styles.statusDot, { backgroundColor: status.color }]} />
+          <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
         </View>
+      </View>
 
-        <Badge status={character.status} />
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Species: </Text>
-          <Text style={styles.value} numberOfLines={1}>
-            {character.species} ({character.gender})
-          </Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Text style={styles.label}>Last location: </Text>
-          <Text style={styles.value} numberOfLines={1}>
-            {character.location.name}
-          </Text>
-        </View>
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>{character.name}</Text>
+        <Text style={styles.subtitle} numberOfLines={1}>
+          {character.species}{character.gender ? ` · ${character.gender}` : ''}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -59,56 +40,55 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({ character, onPress
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    backgroundColor: colors.cardBackground,
-    borderRadius: 16,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+    backgroundColor: colors.surfaceContainer,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    marginHorizontal: 16,
-    marginVertical: 8,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+  },
+  imageWrapper: {
+    width: '100%',
+    aspectRatio: 1,
   },
   image: {
-    width: 120,
-    height: 120,
+    width: '100%',
+    height: '100%',
   },
-  content: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
-  },
-  header: {
+  statusBadge: {
+    position: 'absolute',
+    top: spacing.xs,
+    left: spacing.xs,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    backgroundColor: 'rgba(10,10,11,0.75)',
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: borderRadius.full,
+    marginRight: 6,
+  },
+  statusText: {
+    ...textStyles.labelCaps,
+    fontSize: 10,
+  },
+  info: {
+    padding: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   name: {
-    ...typography.h3,
+    ...textStyles.headlineMd,
+    fontSize: 20,
     color: colors.textPrimary,
-    flex: 1,
-    marginRight: 8,
   },
-  favoriteButton: {
-    padding: 2,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  label: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  value: {
-    ...typography.caption,
+  subtitle: {
+    ...textStyles.bodyMd,
+    fontSize: 14,
     color: colors.textSecondary,
-    flex: 1,
+    marginTop: 2,
   },
 });

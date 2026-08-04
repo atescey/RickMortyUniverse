@@ -1,170 +1,116 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
-  Text,
   FlatList,
   TextInput,
   TouchableOpacity,
+  Text,
   StyleSheet,
-  RefreshControl,
+  ActivityIndicator,
   SafeAreaView,
-  StatusBar,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Character, RootStackParamList } from '../types';
-import { getCharacters } from '../api/rickMortyApi';
 import { CharacterCard } from '../components/CharacterCard';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { getCharacters } from '../api/rickMortyApi';
+import type { Character, RootStackParamList } from '../types';
+import { colors, spacing, borderRadius } from '../theme/colors';
+import { textStyles } from '../theme/textStyles';
+import { Dropdown } from '../components/Dropdown';
+
+const STATUS_FILTERS = ['Tümü', 'Alive', 'Dead', 'unknown'];
+const SPECIES_FILTERS = ['Tümü', 'Human', 'Alien', 'Humanoid', 'Robot', 'Animal'];
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-interface Props {
-  navigation: NavigationProp;
-}
-
-const STATUS_FILTERS = ['All', 'Alive', 'Dead', 'Unknown'];
-
-export const CharacterListScreen: React.FC<Props> = ({ navigation }) => {
+export const CharacterListScreen = () => {
+  const navigation = useNavigation<NavigationProp>();
   const [characters, setCharacters] = useState<Character[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('All');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Tümü');
+  const [speciesFilter, setSpeciesFilter] = useState('Tümü');
 
   const fetchCharacters = useCallback(
-    async (pageNum: number, search: string, status: string, resetList = false) => {
-      if (pageNum === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-
+    async (pageNum: number, reset = false) => {
+      if (loading) return;
+      setLoading(true);
       try {
-        const response = await getCharacters(pageNum, search, status);
-        setTotalPages(response.info?.pages || 1);
-        if (resetList || pageNum === 1) {
-          setCharacters(response.results);
-        } else {
-          setCharacters((prev) => [...prev, ...response.results]);
-        }
-      } catch (error) {
-        console.error('Error fetching characters:', error);
+        const data = await getCharacters(pageNum, {
+          name: search || undefined,
+          status: statusFilter === 'Tümü' ? undefined : statusFilter,
+          species: speciesFilter === 'Tümü' ? undefined : speciesFilter,
+        });
+        setCharacters(prev => (reset ? data.results : [...prev, ...data.results]));
+        setHasMore(!!data.info.next);
+        setPage(pageNum);
+      } catch (e) {
+        if (reset) setCharacters([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
-        setLoadingMore(false);
-        setRefreshing(false);
       }
     },
-    []
+    [search, statusFilter, speciesFilter]
   );
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1);
-      fetchCharacters(1, searchQuery, selectedStatus, true);
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, selectedStatus, fetchCharacters]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setPage(1);
-    fetchCharacters(1, searchQuery, selectedStatus, true);
-  };
-
-  const handleLoadMore = () => {
-    if (!loadingMore && page < totalPages && !loading) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchCharacters(nextPage, searchQuery, selectedStatus, false);
-    }
-  };
+  React.useEffect(() => {
+    fetchCharacters(1, true);
+  }, [search, statusFilter, speciesFilter]);
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
+      <Text style={styles.title}>Rick & Morty{'\n'}Universe</Text>
 
-      <View style={styles.header}>
-        <Text style={styles.title}>Rick & Morty</Text>
-        <Text style={styles.subtitle}>Explore Multiverse Characters</Text>
-
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search character name..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <View style={styles.filterContainer}>
-          {STATUS_FILTERS.map((status) => {
-            const isSelected = selectedStatus === status;
-            return (
-              <TouchableOpacity
-                key={status}
-                style={[styles.filterChip, isSelected && styles.filterChipSelected]}
-                onPress={() => setSelectedStatus(status)}
-              >
-                <Text style={[styles.filterText, isSelected && styles.filterTextSelected]}>
-                  {status}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+      <View style={styles.searchWrapper}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Multiverse varlıklarını ara..."
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+        />
       </View>
 
-      {loading ? (
-        <LoadingSpinner message="Scanning dimension frequency..." />
-      ) : (
-        <FlatList
-          data={characters}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <CharacterCard
-              character={item}
-              onPress={() =>
-                navigation.navigate('CharacterDetail', {
-                  characterId: item.id,
-                  character: item,
-                })
-              }
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-            />
-          }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.4}
-          ListFooterComponent={loadingMore ? <LoadingSpinner message="Fetching more..." /> : null}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="planet-outline" size={48} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No characters found in this dimension.</Text>
-            </View>
-          }
+      <View style={styles.filterRow}>
+        <Dropdown
+          label="DURUM"
+          options={STATUS_FILTERS}
+          selected={statusFilter}
+          onSelect={setStatusFilter}
+          accentColor={colors.primary}
         />
-      )}
+        <Dropdown
+          label="TÜR"
+          options={SPECIES_FILTERS}
+          selected={speciesFilter}
+          onSelect={setSpeciesFilter}
+          accentColor={colors.secondary}
+        />
+      </View>
+
+      <FlatList
+        data={characters}
+        keyExtractor={item => String(item.id)}
+        contentContainerStyle={styles.listContent}
+        renderItem={({ item }) => (
+          <CharacterCard
+            character={item}
+            onPress={() => navigation.navigate('CharacterDetail', { characterId: item.id })}
+          />
+        )}
+        onEndReached={() => {
+          if (hasMore && !loading) fetchCharacters(page + 1);
+        }}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.sm }} />
+          ) : null
+        }
+      />
     </SafeAreaView>
   );
 };
@@ -174,76 +120,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
   title: {
-    ...typography.h1,
+    ...textStyles.headlineLg,
+    fontSize: 26,
     color: colors.primary,
+    paddingHorizontal: spacing.screenMargin,
+    paddingTop: spacing.xs,
   },
-  subtitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.inputBackground,
-    borderWidth: 1,
-    borderColor: colors.inputBorder,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 12,
-  },
-  searchIcon: {
-    marginRight: 8,
+  searchWrapper: {
+    paddingHorizontal: spacing.screenMargin,
+    marginTop: spacing.sm,
   },
   searchInput: {
-    flex: 1,
-    color: colors.textPrimary,
-    ...typography.body,
-  },
-  filterContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  filterChip: {
-    paddingHorizontal: 14,
+    backgroundColor: colors.surfaceContainerLow,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.sm,
     paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: colors.cardBackground,
+    color: colors.textPrimary,
     borderWidth: 1,
     borderColor: colors.cardBorder,
+    ...textStyles.bodyMd,
+    fontSize: 14,
+    lineHeight: 17,
   },
-  filterChipSelected: {
-    backgroundColor: colors.primaryGlow,
-    borderColor: colors.primary,
-  },
-  filterText: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  filterTextSelected: {
-    color: colors.primary,
-    fontWeight: '700',
+  filterRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.screenMargin,
+    marginTop: spacing.sm,
+    gap: spacing.xs,
   },
   listContent: {
-    paddingBottom: 24,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginTop: 12,
-    textAlign: 'center',
+    padding: spacing.screenMargin,
+    paddingBottom: 40,
   },
 });

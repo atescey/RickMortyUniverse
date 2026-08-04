@@ -1,42 +1,25 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { colors, borderRadius } from '../theme/colors';
+import { textStyles } from '../theme/textStyles';
 
 interface BadgeProps {
   status: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ status }) => {
-  const getBadgeStyle = () => {
-    switch (status.toLowerCase()) {
-      case 'alive':
-        return {
-          dotColor: colors.statusAlive,
-          bgColor: colors.statusAliveBg,
-          textColor: colors.statusAlive,
-        };
-      case 'dead':
-        return {
-          dotColor: colors.statusDead,
-          bgColor: colors.statusDeadBg,
-          textColor: colors.statusDead,
-        };
-      default:
-        return {
-          dotColor: colors.statusUnknown,
-          bgColor: colors.statusUnknownBg,
-          textColor: colors.statusUnknown,
-        };
-    }
-  };
+const statusMeta = (status: string) => {
+  if (status === 'Alive') return { label: 'HAYATTA', color: colors.statusAlive };
+  if (status === 'Dead') return { label: 'ÖLÜ', color: colors.statusDead };
+  return { label: 'BİLİNMİYOR', color: colors.statusUnknown };
+};
 
-  const badgeTheme = getBadgeStyle();
+export const Badge: React.FC<BadgeProps> = ({ status }) => {
+  const meta = statusMeta(status);
 
   return (
-    <View style={[styles.container, { backgroundColor: badgeTheme.bgColor }]}>
-      <View style={[styles.dot, { backgroundColor: badgeTheme.dotColor }]} />
-      <Text style={[styles.text, { color: badgeTheme.textColor }]}>{status}</Text>
+    <View style={[styles.container, { backgroundColor: 'rgba(10,10,11,0.75)', borderColor: meta.color }]}>
+      <View style={[styles.dot, { backgroundColor: meta.color }]} />
+      <Text style={[styles.text, { color: meta.color }]}>{meta.label}</Text>
     </View>
   );
 };
@@ -45,19 +28,20 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
     alignSelf: 'flex-start',
   },
   dot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: borderRadius.full,
     marginRight: 6,
   },
   text: {
-    ...typography.badge,
-    textTransform: 'capitalize',
+    ...textStyles.labelCaps,
+    fontSize: 10,
   },
 });

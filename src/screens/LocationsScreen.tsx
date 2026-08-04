@@ -1,242 +1,117 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  SafeAreaView,
-  StatusBar,
+  View, Text, FlatList, StyleSheet, RefreshControl,
+  SafeAreaView, StatusBar, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Location } from '../types';
 import { getLocations } from '../api/rickMortyApi';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { colors, spacing, borderRadius } from '../theme/colors';
+import { textStyles } from '../theme/textStyles';
 
 export const LocationsScreen: React.FC = () => {
   const [locations, setLocations] = useState<Location[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchLocations = useCallback(
-    async (pageNum: number, search: string, resetList = false) => {
-      if (pageNum === 1) {
-        setLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-
-      try {
-        const response = await getLocations(pageNum, search);
-        setTotalPages(response.info?.pages || 1);
-        if (resetList || pageNum === 1) {
-          setLocations(response.results);
-        } else {
-          setLocations((prev) => [...prev, ...response.results]);
-        }
-      } catch (error) {
-        console.error('Error fetching locations:', error);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
-        setRefreshing(false);
-      }
-    },
-    []
-  );
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPage(1);
-      fetchLocations(1, searchQuery, true);
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, fetchLocations]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setPage(1);
-    fetchLocations(1, searchQuery, true);
-  };
-
-  const handleLoadMore = () => {
-    if (!loadingMore && page < totalPages && !loading) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchLocations(nextPage, searchQuery, false);
+  const fetchLocations = useCallback(async (pageNum: number, reset = false) => {
+    if (loading) return;
+    if (pageNum === 1) setLoading(true);
+    try {
+      const response = await getLocations(pageNum);
+      setLocations((prev) => (reset ? response.results : [...prev, ...response.results]));
+      setHasMore(!!response.info.next);
+      setPage(pageNum);
+    } catch (error) {
+      console.error('Error fetching locations:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [loading]);
+
+  useEffect(() => { fetchLocations(1, true); }, []);
+
+  const handleRefresh = () => { setRefreshing(true); fetchLocations(1, true); };
+  const handleLoadMore = () => { if (hasMore && !loading) fetchLocations(page + 1); };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Locations</Text>
-        <Text style={styles.subtitle}>Dimensions & Planets Across Reality</Text>
-
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search location or planet..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
+        <Text style={styles.title}>Lokasyonlar</Text>
+        <Text style={styles.subtitle}>EVRENLER VE GEZEGENLER</Text>
       </View>
 
-      {loading ? (
-        <LoadingSpinner message="Scanning dimensional coords..." />
-      ) : (
-        <FlatList
-          data={locations}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Ionicons name="planet" size={22} color={colors.secondary} />
-                <Text style={styles.locationName}>{item.name}</Text>
-              </View>
+      <FlatList
+        data={locations}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="planet" size={20} color={colors.primary} />
+              <Text style={styles.locationName} numberOfLines={1}>{item.name}</Text>
+            </View>
 
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>Type: </Text>
-                <Text style={styles.value}>{item.type || 'Unknown'}</Text>
+            <View style={styles.tagRow}>
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>{item.type || 'BİLİNMİYOR'}</Text>
               </View>
-
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>Dimension: </Text>
-                <Text style={styles.value}>{item.dimension}</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>Residents: </Text>
-                <Text style={styles.value}>{item.residents.length} recorded</Text>
+              <View style={[styles.tag, styles.tagPurple]}>
+                <Text style={[styles.tagText, styles.tagTextPurple]}>{item.dimension || 'BİLİNMEYEN BOYUT'}</Text>
               </View>
             </View>
-          )}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.secondary}
-            />
-          }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.4}
-          ListFooterComponent={loadingMore ? <LoadingSpinner message="Loading dimensions..." /> : null}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <Ionicons name="globe-outline" size={48} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No locations found in this search sector.</Text>
+
+            <View style={styles.infoRow}>
+              <Ionicons name="people-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.infoText}> {item.residents.length} SAKİN</Text>
             </View>
-          }
-        />
-      )}
+          </View>
+        )}
+        contentContainerStyle={styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={loading ? <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.sm }} /> : null}
+      />
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.secondary,
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.inputBackground,
-    borderWidth: 1,
-    borderColor: colors.inputBorder,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: colors.textPrimary,
-    ...typography.body,
-  },
-  listContent: {
-    padding: 16,
-    paddingBottom: 24,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { paddingHorizontal: spacing.screenMargin, paddingTop: spacing.xs, paddingBottom: spacing.xs },
+  title: { ...textStyles.headlineLg, fontSize: 26, color: colors.primary },
+  subtitle: { ...textStyles.labelCaps, fontSize: 11, color: colors.textSecondary, marginTop: 2 },
+  listContent: { padding: spacing.screenMargin, paddingBottom: 24 },
   card: {
     backgroundColor: colors.cardBackground,
-    borderRadius: 16,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    padding: 16,
-    marginBottom: 12,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs },
+  locationName: { ...textStyles.headlineMd, fontSize: 18, color: colors.textPrimary, marginLeft: spacing.base + 4, flex: 1 },
+  tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.base, marginBottom: spacing.xs },
+  tag: {
+    backgroundColor: 'rgba(159,251,0,0.1)',
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
   },
-  locationName: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    marginLeft: 10,
-    flex: 1,
+  tagPurple: {
+    backgroundColor: 'rgba(157,5,255,0.12)',
+    borderColor: colors.secondary,
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  label: {
-    ...typography.bodyBold,
-    color: colors.textMuted,
-    width: 90,
-  },
-  value: {
-    ...typography.body,
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginTop: 12,
-    textAlign: 'center',
-  },
+  tagText: { ...textStyles.labelCaps, fontSize: 10, color: colors.primary },
+  tagTextPurple: { color: colors.secondary },
+  infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  infoText: { ...textStyles.monoData, fontSize: 11, color: colors.textMuted },
 });

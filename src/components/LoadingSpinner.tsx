@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { colors, spacing } from '../theme/colors';
+import { textStyles } from '../theme/textStyles';
 
 interface LoadingSpinnerProps {
   message?: string;
 }
 
-export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'Opening portal...' }) => {
+export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'PORTAL AÇILIYOR...' }) => {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.primary} />
@@ -18,14 +18,13 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'Openi
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
+    padding: spacing.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
   text: {
-    ...typography.caption,
+    ...textStyles.labelCaps,
     color: colors.primary,
-    marginTop: 12,
-    letterSpacing: 1,
+    marginTop: spacing.xs,
   },
 });

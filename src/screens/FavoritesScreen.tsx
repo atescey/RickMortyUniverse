@@ -1,30 +1,17 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  StatusBar,
+  View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet,
+  SafeAreaView, StatusBar, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
+import { useNavigation } from '@react-navigation/native';
 import { useFavorites } from '../context/FavoritesContext';
 import { CharacterCard } from '../components/CharacterCard';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { colors, spacing, borderRadius } from '../theme/colors';
+import { textStyles } from '../theme/textStyles';
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
-interface Props {
-  navigation: NavigationProp;
-}
-
-export const FavoritesScreen: React.FC<Props> = ({ navigation }) => {
+export const FavoritesScreen: React.FC = () => {
+  const navigation = useNavigation<any>();
   const { favorites, isLoading } = useFavorites();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -37,22 +24,22 @@ export const FavoritesScreen: React.FC<Props> = ({ navigation }) => {
       <StatusBar barStyle="light-content" backgroundColor={colors.background} />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Saved Favorites</Text>
-        <Text style={styles.subtitle}>Your Bookmarked Multiverse Entity Registry</Text>
+        <Text style={styles.title}>Favoriler</Text>
+        <Text style={styles.subtitle}>KAYDEDİLMİŞ KARAKTERLER</Text>
 
         {favorites.length > 0 && (
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color={colors.textMuted} style={styles.searchIcon} />
+            <Ionicons name="search" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search saved characters..."
+              placeholder="Favorilerde ara..."
               placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
               </TouchableOpacity>
             )}
           </View>
@@ -60,31 +47,26 @@ export const FavoritesScreen: React.FC<Props> = ({ navigation }) => {
       </View>
 
       {isLoading ? (
-        <LoadingSpinner message="Reading local storage matrix..." />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.md }} />
       ) : (
         <FlatList
           data={filteredFavorites}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <CharacterCard
               character={item}
-              onPress={() =>
-                navigation.navigate('CharacterDetail', {
-                  characterId: item.id,
-                  character: item,
-                })
-              }
+              onPress={() => navigation.navigate('CharacterDetail', { characterId: item.id })}
             />
           )}
-          contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={styles.emptyState}>
-              <Ionicons name="heart-dislike-outline" size={54} color={colors.favorite} />
-              <Text style={styles.emptyTitle}>No Favorite Characters</Text>
+              <Ionicons name="star-outline" size={48} color={colors.primary} />
+              <Text style={styles.emptyTitle}>Favori Karakter Yok</Text>
               <Text style={styles.emptyText}>
                 {searchQuery.length > 0
-                  ? 'No matching saved character found.'
-                  : 'Tap the heart icon on any character card to add them to your favorites vault.'}
+                  ? 'Aramanıza uygun favori karakter bulunamadı.'
+                  : 'Karakter kartlarındaki yıldız ikonuna dokunarak favorilerinize ekleyebilirsiniz.'}
               </Text>
             </View>
           }
@@ -95,61 +77,24 @@ export const FavoritesScreen: React.FC<Props> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  title: {
-    ...typography.h1,
-    color: colors.favorite,
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  header: { paddingHorizontal: spacing.screenMargin, paddingTop: spacing.xs, paddingBottom: spacing.xs },
+  title: { ...textStyles.headlineLg, fontSize: 26, color: colors.primary },
+  subtitle: { ...textStyles.labelCaps, fontSize: 11, color: colors.textSecondary, marginTop: 2, marginBottom: spacing.xs },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.inputBackground,
+    backgroundColor: colors.surfaceContainerLow,
     borderWidth: 1,
-    borderColor: colors.inputBorder,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: colors.cardBorder,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 10,
+    marginTop: spacing.xs,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: colors.textPrimary,
-    ...typography.body,
-  },
-  listContent: {
-    paddingBottom: 24,
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 40,
-    marginTop: 40,
-  },
-  emptyTitle: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    marginTop: 16,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginTop: 8,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
+  searchInput: { flex: 1, color: colors.textPrimary, ...textStyles.bodyMd, fontSize: 14 },
+  listContent: { padding: spacing.screenMargin },
+  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 40, marginTop: 40 },
+  emptyTitle: { ...textStyles.headlineMd, fontSize: 18, color: colors.textPrimary, marginTop: 16 },
+  emptyText: { ...textStyles.bodyMd, fontSize: 13, color: colors.textMuted, marginTop: 8, textAlign: 'center', lineHeight: 20 },
 });

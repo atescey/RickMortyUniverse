@@ -8,17 +8,19 @@ import {
   TouchableOpacity,
   SafeAreaView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Character, RootStackParamList } from '../types';
-import { getCharacterById } from '../api/rickMortyApi';
+import { Character, Episode, RootStackParamList } from '../types';
+import { getCharacterById, getEpisodesByIds, extractIdsFromUrls } from '../api/rickMortyApi';
 import { Badge } from '../components/Badge';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useFavorites } from '../context/FavoritesContext';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { colors, spacing, borderRadius } from '../theme/colors';
+import { textStyles } from '../theme/textStyles';
 
 type DetailRouteProp = RouteProp<RootStackParamList, 'CharacterDetail'>;
 type DetailNavProp = NativeStackNavigationProp<RootStackParamList, 'CharacterDetail'>;
@@ -29,24 +31,42 @@ interface Props {
 }
 
 export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { characterId, character: initialCharacter } = route.params;
-  const [character, setCharacter] = useState<Character | undefined>(initialCharacter);
-  const [loading, setLoading] = useState(!initialCharacter);
+  const { characterId } = route.params;
+  const [character, setCharacter] = useState<Character | null>(null);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [episodesLoading, setEpisodesLoading] = useState(false);
   const { isFavorite, toggleFavorite } = useFavorites();
 
   useEffect(() => {
-    if (!initialCharacter) {
-      getCharacterById(characterId)
-        .then((data) => setCharacter(data))
-        .catch((err) => console.error(err))
-        .finally(() => setLoading(false));
-    }
-  }, [characterId, initialCharacter]);
+    getCharacterById(characterId)
+      .then(async (data) => {
+        setCharacter(data);
+        setLoading(false);
+
+        if (data.episode.length > 0) {
+          setEpisodesLoading(true);
+          try {
+            const ids = extractIdsFromUrls(data.episode);
+            const episodeData = await getEpisodesByIds(ids);
+            setEpisodes(episodeData);
+          } catch (err) {
+            console.error('Bölümler yüklenemedi', err);
+          } finally {
+            setEpisodesLoading(false);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, [characterId]);
 
   if (loading || !character) {
     return (
       <SafeAreaView style={styles.container}>
-        <LoadingSpinner message="Retrieving subject data..." />
+        <LoadingSpinner message="KARAKTER DETAYLARI YÜKLENİYOR..." />
       </SafeAreaView>
     );
   }
@@ -66,9 +86,9 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
         </Text>
         <TouchableOpacity onPress={() => toggleFavorite(character)} style={styles.favButton}>
           <Ionicons
-            name={favorited ? 'heart' : 'heart-outline'}
-            size={26}
-            color={favorited ? colors.favorite : colors.textMuted}
+            name={favorited ? 'star' : 'star-outline'}
+            size={24}
+            color={favorited ? colors.primary : colors.textMuted}
           />
         </TouchableOpacity>
       </View>
@@ -76,59 +96,79 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroSection}>
           <Image source={{ uri: character.image }} style={styles.heroImage} />
-          <Text style={styles.characterName}>{character.name}</Text>
-          <View style={styles.badgeWrapper}>
+          <LinearGradient
+            colors={['transparent', 'rgba(19,19,20,0.5)', colors.background]}
+            style={styles.heroGradient}
+          />
+          <View style={styles.heroBadgeOverlay}>
             <Badge status={character.status} />
           </View>
         </View>
 
+        <Text style={styles.characterName}>{character.name}</Text>
+
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Identity Info</Text>
-          
+          <Text style={styles.sectionTitle}>KİMLİK BİLGİLERİ</Text>
+
           <View style={styles.row}>
             <Ionicons name="body-outline" size={18} color={colors.primary} style={styles.icon} />
-            <Text style={styles.rowLabel}>Species:</Text>
+            <Text style={styles.rowLabel}>Tür:</Text>
             <Text style={styles.rowValue}>{character.species}</Text>
           </View>
 
           <View style={styles.row}>
             <Ionicons name="male-female-outline" size={18} color={colors.primary} style={styles.icon} />
-            <Text style={styles.rowLabel}>Gender:</Text>
+            <Text style={styles.rowLabel}>Cinsiyet:</Text>
             <Text style={styles.rowValue}>{character.gender}</Text>
           </View>
 
           {character.type ? (
             <View style={styles.row}>
               <Ionicons name="finger-print-outline" size={18} color={colors.primary} style={styles.icon} />
-              <Text style={styles.rowLabel}>Type:</Text>
+              <Text style={styles.rowLabel}>Tip:</Text>
               <Text style={styles.rowValue}>{character.type}</Text>
             </View>
           ) : null}
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Location Data</Text>
+          <Text style={styles.sectionTitle}>KONUM BİLGİLERİ</Text>
 
           <View style={styles.row}>
-            <Ionicons name="planet-outline" size={18} color={colors.secondary} style={styles.icon} />
-            <Text style={styles.rowLabel}>Origin:</Text>
+            <Ionicons name="planet-outline" size={18} color={colors.primary} style={styles.icon} />
+            <Text style={styles.rowLabel}>Köken:</Text>
             <Text style={styles.rowValue}>{character.origin.name}</Text>
           </View>
 
           <View style={styles.row}>
-            <Ionicons name="navigate-outline" size={18} color={colors.secondary} style={styles.icon} />
-            <Text style={styles.rowLabel}>Last Known:</Text>
+            <Ionicons name="navigate-outline" size={18} color={colors.primary} style={styles.icon} />
+            <Text style={styles.rowLabel}>Son Konum:</Text>
             <Text style={styles.rowValue}>{character.location.name}</Text>
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            Appeared in {character.episode.length} Episode(s)
-          </Text>
-          <Text style={styles.episodeNotice}>
-            Subject featured across {character.episode.length} recorded dimension broadcasts.
-          </Text>
+          <View style={styles.episodeHeaderRow}>
+            <Ionicons name="albums-outline" size={18} color={colors.primary} style={styles.icon} />
+            <Text style={styles.sectionTitle}>TESPİT KAYITLARI ({character.episode.length})</Text>
+          </View>
+
+          {episodesLoading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />
+          ) : (
+            episodes.map((ep) => (
+              <View key={ep.id} style={styles.episodeRow}>
+                <View style={styles.episodeBadge}>
+                  <Text style={styles.episodeBadgeText}>{ep.episode}</Text>
+                </View>
+                <View style={styles.episodeInfo}>
+                  <Text style={styles.episodeName} numberOfLines={1}>{ep.name}</Text>
+                  <Text style={styles.episodeDate}>{ep.air_date}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </View>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -144,8 +184,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.screenMargin,
+    paddingVertical: spacing.xs,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
@@ -156,48 +196,59 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    ...typography.h3,
+    ...textStyles.headlineMd,
+    fontSize: 16,
     color: colors.textPrimary,
     flex: 1,
     textAlign: 'center',
-    marginHorizontal: 12,
+    marginHorizontal: spacing.xs,
   },
   scrollContent: {
-    padding: 16,
     paddingBottom: 40,
   },
   heroSection: {
-    alignItems: 'center',
-    marginBottom: 20,
+    width: '100%',
+    height: 280,
+    position: 'relative',
   },
   heroImage: {
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 3,
-    borderColor: colors.primary,
+    width: '100%',
+    height: '100%',
+  },
+  heroGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+  },
+  heroBadgeOverlay: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    left: spacing.sm,
   },
   characterName: {
-    ...typography.h1,
+    ...textStyles.headlineLg,
+    fontSize: 28,
     color: colors.textPrimary,
-    marginTop: 14,
-    textAlign: 'center',
-  },
-  badgeWrapper: {
-    marginTop: 8,
+    paddingHorizontal: spacing.screenMargin,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
   },
   card: {
     backgroundColor: colors.cardBackground,
-    borderRadius: 16,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    padding: 16,
-    marginBottom: 16,
+    padding: spacing.sm,
+    marginHorizontal: spacing.screenMargin,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
-    ...typography.h3,
+    ...textStyles.labelCaps,
+    fontSize: 12,
     color: colors.primary,
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   row: {
     flexDirection: 'row',
@@ -208,17 +259,54 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   rowLabel: {
-    ...typography.bodyBold,
+    ...textStyles.bodyMd,
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.textSecondary,
     width: 90,
   },
   rowValue: {
-    ...typography.body,
+    ...textStyles.bodyMd,
+    fontSize: 14,
     color: colors.textPrimary,
     flex: 1,
   },
-  episodeNotice: {
-    ...typography.caption,
+  episodeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  episodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.divider,
+  },
+  episodeBadge: {
+    backgroundColor: colors.surfaceContainerHigh,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginRight: spacing.sm,
+  },
+  episodeBadgeText: {
+    ...textStyles.labelCaps,
+    fontSize: 10,
+    color: colors.primary,
+  },
+  episodeInfo: {
+    flex: 1,
+  },
+  episodeName: {
+    ...textStyles.headlineMd,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  episodeDate: {
+    ...textStyles.monoData,
+    fontSize: 11,
     color: colors.textMuted,
+    marginTop: 2,
   },
 });
