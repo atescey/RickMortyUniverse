@@ -5,12 +5,14 @@ import { CharacterListScreen } from '../screens/CharacterListScreen';
 import { LocationsScreen } from '../screens/LocationsScreen';
 import { EpisodesScreen } from '../screens/EpisodesScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 import type { TabParamList } from '../types';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 
 export const TabNavigator = () => {
+  const { colors } = useTheme();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({

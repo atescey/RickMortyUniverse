@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
-import { colors, spacing } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { spacing } from '../theme/colors';
 import { textStyles } from '../theme/textStyles';
 
 interface LoadingSpinnerProps {
@@ -8,10 +9,12 @@ interface LoadingSpinnerProps {
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'PORTAL AÇILIYOR...' }) => {
+  const { colors } = useTheme();
+
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.text}>{message}</Text>
+      <Text style={[styles.text, { color: colors.primary }]}>{message}</Text>
     </View>
   );
 };
@@ -24,7 +27,6 @@ const styles = StyleSheet.create({
   },
   text: {
     ...textStyles.labelCaps,
-    color: colors.primary,
     marginTop: spacing.xs,
   },
 });

@@ -1,37 +1,40 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, Image, TouchableOpacity, StyleSheet, RefreshControl,
-  SafeAreaView, StatusBar, ActivityIndicator,
+  SafeAreaView, ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Episode, RootStackParamList } from '../types';
 import { getEpisodes, getCharactersByIds, extractIdsFromUrls } from '../api/rickMortyApi';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { spacing, borderRadius } from '../theme/colors';
 import { textStyles } from '../theme/textStyles';
-
-const seasonColor = (episodeCode: string) => {
-  const season = episodeCode.match(/S(\d+)/)?.[1];
-  const map: Record<string, string> = {
-    '01': colors.primary,
-    '02': colors.secondary,
-    '03': colors.tertiary,
-    '04': colors.secondary,
-  };
-  return map[season ?? '01'] ?? colors.primary;
-};
+import { useTheme } from '../context/ThemeContext';
+import { ThemeToggleButton } from '../components/ThemeToggleButton';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const EpisodesScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useTheme();
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [thumbnails, setThumbnails] = useState<Record<number, string>>({});
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const seasonColor = (episodeCode: string) => {
+    const season = episodeCode.match(/S(\d+)/)?.[1];
+    const map: Record<string, string> = {
+      '01': colors.primary,
+      '02': colors.secondary,
+      '03': colors.tertiary,
+      '04': colors.secondary,
+    };
+    return map[season ?? '01'] ?? colors.primary;
+  };
 
   const loadThumbnails = async (eps: Episode[]) => {
     const firstCharIds = eps
@@ -78,11 +81,10 @@ export const EpisodesScreen: React.FC = () => {
   const handleLoadMore = () => { if (hasMore && !loading) fetchEpisodes(page + 1); };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-
-      <View style={styles.header}>
-        <Text style={styles.title}>Multiverse{'\n'}Kayıtları</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.headerRow}>
+        <Text style={[styles.title, { color: colors.primary }]}>Multiverse{'\n'}Kayıtları</Text>
+        <ThemeToggleButton />
       </View>
 
       <FlatList
@@ -93,7 +95,15 @@ export const EpisodesScreen: React.FC = () => {
           const thumb = thumbnails[item.id];
           return (
             <TouchableOpacity
-              style={[styles.card, { borderLeftColor: accent, borderLeftWidth: 3 }]}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.cardBorder,
+                  borderLeftColor: accent,
+                  borderLeftWidth: 3,
+                },
+              ]}
               activeOpacity={0.85}
               onPress={() => navigation.navigate('EpisodeDetail', { episodeId: item.id })}
             >
@@ -101,24 +111,24 @@ export const EpisodesScreen: React.FC = () => {
                 {thumb ? (
                   <Image source={{ uri: thumb }} style={styles.thumb} />
                 ) : (
-                  <View style={[styles.thumb, styles.thumbPlaceholder]}>
+                  <View style={[styles.thumb, styles.thumbPlaceholder, { backgroundColor: colors.surfaceContainerHigh }]}>
                     <ActivityIndicator size="small" color={colors.textMuted} />
                   </View>
                 )}
                 <View style={[styles.episodeBadge, { backgroundColor: accent }]}>
-                  <Text style={styles.episodeCode}>{item.episode}</Text>
+                  <Text style={[styles.episodeCode, { color: colors.onPrimary }]}>{item.episode}</Text>
                 </View>
               </View>
 
               <View style={styles.cardContent}>
-                <Text style={styles.episodeName} numberOfLines={2}>{item.name}</Text>
+                <Text style={[styles.episodeName, { color: colors.textPrimary }]} numberOfLines={2}>{item.name}</Text>
                 <View style={styles.infoRow}>
                   <Ionicons name="calendar-outline" size={12} color={colors.textMuted} />
-                  <Text style={styles.infoText}> {item.air_date}</Text>
+                  <Text style={[styles.infoText, { color: colors.textSecondary }]}> {item.air_date}</Text>
                 </View>
                 <View style={styles.infoRow}>
                   <Ionicons name="people-outline" size={12} color={colors.textMuted} />
-                  <Text style={styles.infoText}> {item.characters.length} KARAKTER</Text>
+                  <Text style={[styles.infoText, { color: colors.textSecondary }]}> {item.characters.length} KARAKTER</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
@@ -136,17 +146,22 @@ export const EpisodesScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: { paddingHorizontal: spacing.screenMargin, paddingTop: spacing.xs, paddingBottom: spacing.xs },
-  title: { ...textStyles.headlineLg, fontSize: 26, color: colors.primary },
+  container: { flex: 1 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.screenMargin,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
+  },
+  title: { ...textStyles.headlineLg, fontSize: 26 },
   listContent: { padding: spacing.screenMargin, paddingBottom: 24 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.cardBackground,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
     padding: spacing.xs,
     marginBottom: spacing.sm,
   },
@@ -162,7 +177,6 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   thumbPlaceholder: {
-    backgroundColor: colors.surfaceContainerHigh,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -174,9 +188,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 1,
   },
-  episodeCode: { ...textStyles.labelCaps, fontSize: 8, color: colors.background },
+  episodeCode: { ...textStyles.labelCaps, fontSize: 8 },
   cardContent: { flex: 1 },
-  episodeName: { ...textStyles.headlineMd, fontSize: 14, color: colors.textPrimary, marginBottom: 3 },
+  episodeName: { ...textStyles.headlineMd, fontSize: 14, marginBottom: 3 },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 1 },
-  infoText: { ...textStyles.monoData, fontSize: 10, color: colors.textSecondary },
+  infoText: { ...textStyles.monoData, fontSize: 10 },
 });

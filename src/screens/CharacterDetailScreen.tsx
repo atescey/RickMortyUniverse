@@ -7,7 +7,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  StatusBar,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,8 +18,10 @@ import { getCharacterById, getEpisodesByIds, extractIdsFromUrls } from '../api/r
 import { Badge } from '../components/Badge';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { useFavorites } from '../context/FavoritesContext';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { spacing, borderRadius } from '../theme/colors';
 import { textStyles } from '../theme/textStyles';
+import { useTheme } from '../context/ThemeContext';
+import { ThemeToggleButton } from '../components/ThemeToggleButton';
 
 type DetailRouteProp = RouteProp<RootStackParamList, 'CharacterDetail'>;
 type DetailNavProp = NativeStackNavigationProp<RootStackParamList, 'CharacterDetail'>;
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { colors, isDarkMode } = useTheme();
   const { characterId } = route.params;
   const [character, setCharacter] = useState<Character | null>(null);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
@@ -65,7 +67,7 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
 
   if (loading || !character) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <LoadingSpinner message="KARAKTER DETAYLARI YÜKLENİYOR..." />
       </SafeAreaView>
     );
@@ -74,30 +76,31 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
   const favorited = isFavorite(character.id);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-
-      <View style={styles.topBar}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.topBar, { borderBottomColor: colors.cardBorder }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]} numberOfLines={1}>
           {character.name}
         </Text>
-        <TouchableOpacity onPress={() => toggleFavorite(character)} style={styles.favButton}>
-          <Ionicons
-            name={favorited ? 'star' : 'star-outline'}
-            size={24}
-            color={favorited ? colors.primary : colors.textMuted}
-          />
-        </TouchableOpacity>
+        <View style={styles.rightButtonsRow}>
+          <TouchableOpacity onPress={() => toggleFavorite(character)} style={styles.favButton}>
+            <Ionicons
+              name={favorited ? 'star' : 'star-outline'}
+              size={24}
+              color={favorited ? colors.primary : colors.textMuted}
+            />
+          </TouchableOpacity>
+          <ThemeToggleButton size={30} />
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroSection}>
           <Image source={{ uri: character.image }} style={styles.heroImage} />
           <LinearGradient
-            colors={['transparent', 'rgba(19,19,20,0.5)', colors.background]}
+            colors={['transparent', isDarkMode ? 'rgba(19,19,20,0.5)' : 'rgba(242,246,240,0.5)', colors.background]}
             style={styles.heroGradient}
           />
           <View style={styles.heroBadgeOverlay}>
@@ -105,52 +108,52 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
           </View>
         </View>
 
-        <Text style={styles.characterName}>{character.name}</Text>
+        <Text style={[styles.characterName, { color: colors.textPrimary }]}>{character.name}</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>KİMLİK BİLGİLERİ</Text>
+        <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>KİMLİK BİLGİLERİ</Text>
 
           <View style={styles.row}>
             <Ionicons name="body-outline" size={18} color={colors.primary} style={styles.icon} />
-            <Text style={styles.rowLabel}>Tür:</Text>
-            <Text style={styles.rowValue}>{character.species}</Text>
+            <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Tür:</Text>
+            <Text style={[styles.rowValue, { color: colors.textPrimary }]}>{character.species}</Text>
           </View>
 
           <View style={styles.row}>
             <Ionicons name="male-female-outline" size={18} color={colors.primary} style={styles.icon} />
-            <Text style={styles.rowLabel}>Cinsiyet:</Text>
-            <Text style={styles.rowValue}>{character.gender}</Text>
+            <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Cinsiyet:</Text>
+            <Text style={[styles.rowValue, { color: colors.textPrimary }]}>{character.gender}</Text>
           </View>
 
           {character.type ? (
             <View style={styles.row}>
               <Ionicons name="finger-print-outline" size={18} color={colors.primary} style={styles.icon} />
-              <Text style={styles.rowLabel}>Tip:</Text>
-              <Text style={styles.rowValue}>{character.type}</Text>
+              <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Tip:</Text>
+              <Text style={[styles.rowValue, { color: colors.textPrimary }]}>{character.type}</Text>
             </View>
           ) : null}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>KONUM BİLGİLERİ</Text>
+        <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+          <Text style={[styles.sectionTitle, { color: colors.primary }]}>KONUM BİLGİLERİ</Text>
 
           <View style={styles.row}>
             <Ionicons name="planet-outline" size={18} color={colors.primary} style={styles.icon} />
-            <Text style={styles.rowLabel}>Köken:</Text>
-            <Text style={styles.rowValue}>{character.origin.name}</Text>
+            <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Köken:</Text>
+            <Text style={[styles.rowValue, { color: colors.textPrimary }]}>{character.origin.name}</Text>
           </View>
 
           <View style={styles.row}>
             <Ionicons name="navigate-outline" size={18} color={colors.primary} style={styles.icon} />
-            <Text style={styles.rowLabel}>Son Konum:</Text>
-            <Text style={styles.rowValue}>{character.location.name}</Text>
+            <Text style={[styles.rowLabel, { color: colors.textSecondary }]}>Son Konum:</Text>
+            <Text style={[styles.rowValue, { color: colors.textPrimary }]}>{character.location.name}</Text>
           </View>
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
           <View style={styles.episodeHeaderRow}>
             <Ionicons name="albums-outline" size={18} color={colors.primary} style={styles.icon} />
-            <Text style={styles.sectionTitle}>TESPİT KAYITLARI ({character.episode.length})</Text>
+            <Text style={[styles.sectionTitle, { color: colors.primary }]}>TESPİT KAYITLARI ({character.episode.length})</Text>
           </View>
 
           {episodesLoading ? (
@@ -159,16 +162,16 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
             episodes.map((ep) => (
               <TouchableOpacity
                 key={ep.id}
-                style={styles.episodeRow}
+                style={[styles.episodeRow, { borderBottomColor: colors.divider }]}
                 activeOpacity={0.7}
                 onPress={() => navigation.navigate('EpisodeDetail', { episodeId: ep.id })}
               >
-                <View style={styles.episodeBadge}>
-                  <Text style={styles.episodeBadgeText}>{ep.episode}</Text>
+                <View style={[styles.episodeBadge, { backgroundColor: colors.surfaceContainerHigh }]}>
+                  <Text style={[styles.episodeBadgeText, { color: colors.primary }]}>{ep.episode}</Text>
                 </View>
                 <View style={styles.episodeInfo}>
-                  <Text style={styles.episodeName} numberOfLines={1}>{ep.name}</Text>
-                  <Text style={styles.episodeDate}>{ep.air_date}</Text>
+                  <Text style={[styles.episodeName, { color: colors.textPrimary }]} numberOfLines={1}>{ep.name}</Text>
+                  <Text style={[styles.episodeDate, { color: colors.textMuted }]}>{ep.air_date}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
               </TouchableOpacity>
@@ -183,7 +186,6 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   topBar: {
     flexDirection: 'row',
@@ -192,10 +194,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenMargin,
     paddingVertical: spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
   },
   backButton: {
     padding: 4,
+  },
+  rightButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
   favButton: {
     padding: 4,
@@ -203,7 +209,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     ...textStyles.headlineMd,
     fontSize: 16,
-    color: colors.textPrimary,
     flex: 1,
     textAlign: 'center',
     marginHorizontal: spacing.xs,
@@ -235,16 +240,13 @@ const styles = StyleSheet.create({
   characterName: {
     ...textStyles.headlineLg,
     fontSize: 28,
-    color: colors.textPrimary,
     paddingHorizontal: spacing.screenMargin,
     marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
   card: {
-    backgroundColor: colors.cardBackground,
     borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
     padding: spacing.sm,
     marginHorizontal: spacing.screenMargin,
     marginBottom: spacing.sm,
@@ -252,7 +254,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     ...textStyles.labelCaps,
     fontSize: 12,
-    color: colors.primary,
     marginBottom: spacing.sm,
   },
   row: {
@@ -267,13 +268,11 @@ const styles = StyleSheet.create({
     ...textStyles.bodyMd,
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textSecondary,
     width: 90,
   },
   rowValue: {
     ...textStyles.bodyMd,
     fontSize: 14,
-    color: colors.textPrimary,
     flex: 1,
   },
   episodeHeaderRow: {
@@ -286,10 +285,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xs,
     borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
   },
   episodeBadge: {
-    backgroundColor: colors.surfaceContainerHigh,
     borderRadius: borderRadius.md,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -298,7 +295,6 @@ const styles = StyleSheet.create({
   episodeBadgeText: {
     ...textStyles.labelCaps,
     fontSize: 10,
-    color: colors.primary,
   },
   episodeInfo: {
     flex: 1,
@@ -306,12 +302,10 @@ const styles = StyleSheet.create({
   episodeName: {
     ...textStyles.headlineMd,
     fontSize: 15,
-    color: colors.textPrimary,
   },
   episodeDate: {
     ...textStyles.monoData,
     fontSize: 11,
-    color: colors.textMuted,
     marginTop: 2,
   },
 });

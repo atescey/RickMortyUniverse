@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   TextInput,
-  TouchableOpacity,
   Text,
   StyleSheet,
   ActivityIndicator,
@@ -14,9 +13,11 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CharacterCard } from '../components/CharacterCard';
 import { getCharacters } from '../api/rickMortyApi';
 import type { Character, RootStackParamList } from '../types';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { spacing, borderRadius } from '../theme/colors';
 import { textStyles } from '../theme/textStyles';
 import { Dropdown } from '../components/Dropdown';
+import { ThemeToggleButton } from '../components/ThemeToggleButton';
+import { useTheme } from '../context/ThemeContext';
 
 const STATUS_FILTERS = ['Tümü', 'Alive', 'Dead', 'unknown'];
 const SPECIES_FILTERS = ['Tümü', 'Human', 'Alien', 'Humanoid', 'Robot', 'Animal'];
@@ -25,6 +26,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const CharacterListScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useTheme();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -61,12 +63,22 @@ export const CharacterListScreen = () => {
   }, [search, statusFilter, speciesFilter]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Rick & Morty{'\n'}Universe</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.headerRow}>
+        <Text style={[styles.title, { color: colors.primary }]}>Rick & Morty{'\n'}Universe</Text>
+        <ThemeToggleButton />
+      </View>
 
       <View style={styles.searchWrapper}>
         <TextInput
-          style={styles.searchInput}
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: colors.surfaceContainerLow,
+              borderColor: colors.cardBorder,
+              color: colors.textPrimary,
+            },
+          ]}
           placeholder="Multiverse varlıklarını ara..."
           placeholderTextColor={colors.textMuted}
           value={search}
@@ -113,8 +125,10 @@ export const CharacterListScreen = () => {
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>Karakter Bulunamadı</Text>
-              <Text style={styles.emptySub}>Arama veya filtreleme kriterlerinize uygun sonuç bulunamadı.</Text>
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Karakter Bulunamadı</Text>
+              <Text style={[styles.emptySub, { color: colors.textMuted }]}>
+                Arama veya filtreleme kriterlerinize uygun sonuç bulunamadı.
+              </Text>
             </View>
           ) : null
         }
@@ -126,27 +140,27 @@ export const CharacterListScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.screenMargin,
+    paddingTop: spacing.xs,
   },
   title: {
     ...textStyles.headlineLg,
     fontSize: 26,
-    color: colors.primary,
-    paddingHorizontal: spacing.screenMargin,
-    paddingTop: spacing.xs,
   },
   searchWrapper: {
     paddingHorizontal: spacing.screenMargin,
     marginTop: spacing.sm,
   },
   searchInput: {
-    backgroundColor: colors.surfaceContainerLow,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    color: colors.textPrimary,
+    paddingVertical: 8,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
     ...textStyles.bodyMd,
     fontSize: 14,
     lineHeight: 17,
@@ -169,13 +183,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     ...textStyles.headlineMd,
     fontSize: 18,
-    color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   emptySub: {
     ...textStyles.bodyMd,
     fontSize: 13,
-    color: colors.textMuted,
     textAlign: 'center',
   },
 });

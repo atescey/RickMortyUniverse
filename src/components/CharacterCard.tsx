@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
+import { borderRadius, spacing } from '../theme/colors';
 import { textStyles } from '../theme/textStyles';
 import type { Character } from '../types';
 
@@ -9,28 +10,42 @@ interface Props {
   onPress: () => void;
 }
 
-const statusMeta = (status: string) => {
-  if (status === 'Alive') return { label: 'HAYATTA', color: colors.statusAlive };
-  if (status === 'Dead') return { label: 'ÖLÜ', color: colors.statusDead };
-  return { label: 'BİLİNMİYOR', color: colors.statusUnknown };
-};
-
 export const CharacterCard: React.FC<Props> = ({ character, onPress }) => {
+  const { colors, isDarkMode } = useTheme();
+
+  const statusMeta = (status: string) => {
+    if (status === 'Alive') return { label: 'HAYATTA', color: colors.statusAlive };
+    if (status === 'Dead') return { label: 'ÖLÜ', color: colors.statusDead };
+    return { label: 'BİLİNMİYOR', color: colors.statusUnknown };
+  };
+
   const status = statusMeta(character.status);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surfaceContainer,
+          borderColor: colors.cardBorder,
+        },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
       <View style={styles.imageWrapper}>
         <Image source={{ uri: character.image }} style={styles.image} />
-        <View style={styles.statusBadge}>
+        <View style={[styles.statusBadge, { backgroundColor: isDarkMode ? 'rgba(10,10,11,0.75)' : 'rgba(255,255,255,0.85)' }]}>
           <View style={[styles.statusDot, { backgroundColor: status.color }]} />
           <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
         </View>
       </View>
 
       <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{character.name}</Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        <Text style={[styles.name, { color: colors.textPrimary }]} numberOfLines={1}>
+          {character.name}
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
           {character.species}{character.gender ? ` · ${character.gender}` : ''}
         </Text>
       </View>
@@ -43,9 +58,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     overflow: 'hidden',
     marginBottom: spacing.sm,
-    backgroundColor: colors.surfaceContainer,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
   },
   imageWrapper: {
     width: '100%',
@@ -61,7 +74,6 @@ const styles = StyleSheet.create({
     left: spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(10,10,11,0.75)',
     borderRadius: borderRadius.full,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -83,12 +95,10 @@ const styles = StyleSheet.create({
   name: {
     ...textStyles.headlineMd,
     fontSize: 20,
-    color: colors.textPrimary,
   },
   subtitle: {
     ...textStyles.bodyMd,
     fontSize: 14,
-    color: colors.textSecondary,
     marginTop: 2,
   },
 });
