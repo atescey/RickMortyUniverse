@@ -45,7 +45,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
 
             <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
                 <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
-                    <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+                    <Pressable style={styles.sheet} onPress={(e) => e?.stopPropagation?.()}>
                         <Text style={styles.sheetTitle}>{label}</Text>
                         <FlatList
                             data={options}

@@ -17,7 +17,7 @@ export const LocationsScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchLocations = useCallback(async (pageNum: number, reset = false) => {
-    if (loading) return;
+    if (loading && !reset) return;
     if (pageNum === 1) setLoading(true);
     try {
       const response = await getLocations(pageNum);

@@ -25,7 +25,10 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const stored = await AsyncStorage.getItem(FAVORITES_STORAGE_KEY);
       if (stored) {
-        setFavorites(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          setFavorites(parsed);
+        }
       }
     } catch (e) {
       console.error('Failed to load favorites from AsyncStorage', e);

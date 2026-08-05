@@ -12,16 +12,13 @@ export const colors = {
   outline: '#8a947a',
   outlineVariant: '#414a34',
 
-  // Radioactive Green — birincil vurgu
   primary: '#9ffb00',
   primaryDim: '#8bdc00',
   onPrimary: '#1f3700',
 
-  // Portal Purple — ikincil vurgu (navigasyon, boyut geçişleri)
   secondary: '#9d05ff',
   onSecondary: '#4b007e',
 
-  // C-137 Blue — veri/durum göstergeleri
   tertiary: '#7df4ff',
   onTertiary: '#00363a',
 
@@ -56,7 +53,6 @@ export const borderRadius = {
   full: 9999,
 };
 
-// Eski kodun typography.sizes.xs/sm/md kullanımıyla uyumluluk için:
 export const typography = {
   sizes: { xs: 12, sm: 14, md: 16, lg: 20, xl: 24, xxl: 32 },
 };

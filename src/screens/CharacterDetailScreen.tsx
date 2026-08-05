@@ -157,7 +157,12 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
             <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.sm }} />
           ) : (
             episodes.map((ep) => (
-              <View key={ep.id} style={styles.episodeRow}>
+              <TouchableOpacity
+                key={ep.id}
+                style={styles.episodeRow}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('EpisodeDetail', { episodeId: ep.id })}
+              >
                 <View style={styles.episodeBadge}>
                   <Text style={styles.episodeBadgeText}>{ep.episode}</Text>
                 </View>
@@ -166,7 +171,7 @@ export const CharacterDetailScreen: React.FC<Props> = ({ route, navigation }) =>
                   <Text style={styles.episodeDate}>{ep.air_date}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-              </View>
+              </TouchableOpacity>
             ))
           )}
         </View>

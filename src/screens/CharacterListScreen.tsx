@@ -35,11 +35,11 @@ export const CharacterListScreen = () => {
 
   const fetchCharacters = useCallback(
     async (pageNum: number, reset = false) => {
-      if (loading) return;
+      if (loading && !reset) return;
       setLoading(true);
       try {
         const data = await getCharacters(pageNum, {
-          name: search || undefined,
+          name: search.trim() || undefined,
           status: statusFilter === 'Tümü' ? undefined : statusFilter,
           species: speciesFilter === 'Tümü' ? undefined : speciesFilter,
         });
@@ -53,7 +53,7 @@ export const CharacterListScreen = () => {
         setLoading(false);
       }
     },
-    [search, statusFilter, speciesFilter]
+    [search, statusFilter, speciesFilter, loading]
   );
 
   React.useEffect(() => {
@@ -110,6 +110,14 @@ export const CharacterListScreen = () => {
             <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.sm }} />
           ) : null
         }
+        ListEmptyComponent={
+          !loading ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>Karakter Bulunamadı</Text>
+              <Text style={styles.emptySub}>Arama veya filtreleme kriterlerinize uygun sonuç bulunamadı.</Text>
+            </View>
+          ) : null
+        }
       />
     </SafeAreaView>
   );
@@ -152,5 +160,22 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.screenMargin,
     paddingBottom: 40,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyTitle: {
+    ...textStyles.headlineMd,
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  emptySub: {
+    ...textStyles.bodyMd,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
   },
 });
