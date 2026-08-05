@@ -6,12 +6,15 @@ React Native ve Expo kullanılarak geliştirilmiş, The Rick and Morty API deste
 
 ---
 
-#####  Ekran Görüntüleri
+##### 📱 Application Preview
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/c7b53335-3871-41f2-bd3b-33aa8566d153" width="250" />
+  <img src="https://github.com/user-attachments/assets/878fb29c-cc81-477d-ace8-9035e0e8992b" width="250" />
   &nbsp;&nbsp;&nbsp;
-  <img src="https://github.com/user-attachments/assets/f832e2c0-7aba-4194-8ef1-3a627b0f1027" width="250" />
+  <img src="https://github.com/user-attachments/assets/158d3903-5220-4842-906e-53e060113a9f" width="250" />
   &nbsp;&nbsp;&nbsp;
-  <img src="https://github.com/user-attachments/assets/42c5f9c7-298e-456f-9242-e0cca17f15a7" width="250" />
+  <img src="https://github.com/user-attachments/assets/542bf063-66fb-498e-bcdd-6d1fb42d96b9" width="250" />
 </p>
+
+
+
