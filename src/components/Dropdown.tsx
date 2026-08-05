@@ -14,17 +14,18 @@ interface DropdownProps {
 
 export const Dropdown: React.FC<DropdownProps> = ({
     label,
-    options,
+    options = [],
     selected,
     onSelect,
     accentColor = colors.primary,
 }) => {
     const [visible, setVisible] = useState(false);
+    const isSelectedFiltered = options && options.length > 0 && selected !== options[0];
 
     return (
         <>
             <TouchableOpacity
-                style={[styles.trigger, selected !== options[0] && { borderColor: accentColor }]}
+                style={[styles.trigger, isSelectedFiltered && { borderColor: accentColor }]}
                 onPress={() => setVisible(true)}
                 activeOpacity={0.8}
             >
@@ -33,23 +34,36 @@ export const Dropdown: React.FC<DropdownProps> = ({
                     <Text
                         style={[
                             styles.triggerValue,
-                            selected !== options[0] && { color: accentColor },
+                            isSelectedFiltered && { color: accentColor },
                         ]}
                         numberOfLines={1}
                     >
                         {selected}
                     </Text>
-                    <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
+                    <Ionicons
+                        name={visible ? 'chevron-up' : 'chevron-down'}
+                        size={14}
+                        color={isSelectedFiltered ? accentColor : colors.textMuted}
+                    />
                 </View>
             </TouchableOpacity>
 
             <Modal visible={visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
-                <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
-                    <Pressable style={styles.sheet} onPress={(e) => e?.stopPropagation?.()}>
-                        <Text style={styles.sheetTitle}>{label}</Text>
+                <View style={styles.overlay}>
+                    <Pressable style={StyleSheet.absoluteFill} onPress={() => setVisible(false)} />
+                    <View style={styles.sheet}>
+                        <View style={styles.sheetHeader}>
+                            <Text style={styles.sheetTitle}>{label}</Text>
+                            <TouchableOpacity
+                                onPress={() => setVisible(false)}
+                                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            >
+                                <Ionicons name="close" size={20} color={colors.textMuted} />
+                            </TouchableOpacity>
+                        </View>
                         <FlatList
                             data={options}
-                            keyExtractor={(item) => item}
+                            keyExtractor={(item, index) => `${item}-${index}`}
                             renderItem={({ item }) => {
                                 const isSelected = item === selected;
                                 return (
@@ -68,8 +82,8 @@ export const Dropdown: React.FC<DropdownProps> = ({
                                 );
                             }}
                         />
-                    </Pressable>
-                </Pressable>
+                    </View>
+                </View>
             </Modal>
         </>
     );
@@ -103,6 +117,7 @@ const styles = StyleSheet.create({
         lineHeight: 15,
         color: colors.textPrimary,
         flex: 1,
+        marginRight: 4,
     },
     overlay: {
         flex: 1,
@@ -120,12 +135,17 @@ const styles = StyleSheet.create({
         paddingBottom: spacing.lg,
         maxHeight: '60%',
     },
+    sheetHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.xs,
+        paddingHorizontal: spacing.xs,
+    },
     sheetTitle: {
         ...textStyles.labelCaps,
         fontSize: 12,
         color: colors.textMuted,
-        marginBottom: spacing.xs,
-        paddingHorizontal: spacing.xs,
     },
     option: {
         flexDirection: 'row',
